@@ -10,14 +10,14 @@ public class IntakeSubsystem extends SubsystemBase {
 
     // Intake speed constants
     private static final double INTAKE_SPEED = 0.7;  // Full power for intake
-    private static final double HOLD_SPEED = 0.2;    // Reduced power to hold game piece
+    private static final double HOLD_SPEED = 0;    // Reduced power to hold game piece
     private static final double OUTTAKE_SPEED = -1.0; // Full power for outtaking
 
     public IntakeSubsystem(int motor1ID, int motor2ID) {
         intakeMotor1 = new SparkMax(motor1ID, MotorType.kBrushless);
         intakeMotor2 = new SparkMax(motor2ID, MotorType.kBrushless);
 
-        intakeMotor2.isFollower(); // Invert second motor if needed
+        intakeMotor2.isFollower();
         intakeMotor2.setInverted(true);
     }
 

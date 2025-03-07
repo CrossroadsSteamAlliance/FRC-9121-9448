@@ -86,7 +86,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private final SysIdRoutine m_sysIdRoutineRotation = new SysIdRoutine(
         new SysIdRoutine.Config(
             /* This is in radians per second², but SysId only supports "volts per second" */
-            Volts.of(Math.PI / 4).per(Second),
+            Volts.of(Math.PI / 6).per(Second),
             /* This is in radians per second, but SysId only supports "volts" */
             Volts.of(Math.PI),
             null, // Use default timeout (10 s)

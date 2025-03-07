@@ -25,8 +25,8 @@ public class ElevatorSubsystem extends SubsystemBase {
     private static final double MIN_HEIGHT = 0.0;
     private static final double TICKS_PER_INCH = (2048 * GEAR_RATIO) / STAGE_MULTIPLIER; 
 
-    public ElevatorSubsystem(int motorID) {
-        elevatorMotor = new TalonFX(motorID);
+    public ElevatorSubsystem() {
+        elevatorMotor = new TalonFX(Constants.ElevatorConstants.kCANElevator);
         motionMagic = new MotionMagicVoltage(0);
 
         TalonFXConfiguration config = new TalonFXConfiguration();

@@ -6,30 +6,34 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.Orchestra;
+import com.ctre.phoenix6.hardware.ParentDevice;
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.GenericHID;
-import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Commands.ElevatorCommand;
-import frc.robot.Commands.IntakeCommand;
 import frc.robot.Constants.ElevatorConstants;
-import frc.robot.Constants.IntakeConstats;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
-import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.subsystems.OrchestraPlayer;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
+
+    //public OrchestraPlayer music;
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -40,16 +44,14 @@ public class RobotContainer {
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
-    private final CommandXboxController joystick = new CommandXboxController(0);
-    private final CommandXboxController operator = new CommandXboxController(0);
+    private final ElevatorSubsystem elevator = new ElevatorSubsystem();
 
-    private final Joystick launchpad = new Joystick(3);
+    private final CommandXboxController joystick = new CommandXboxController(0);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-    public final ElevatorSubsystem elevator = new ElevatorSubsystem(ElevatorConstants.kCANElevator);
-    public final IntakeSubsystem intake = new IntakeSubsystem(IntakeConstats.kCANIntakeTop, IntakeConstats.kCANIntakeBottom);
 
     public RobotContainer() {
+        //loadMusic();
         configureBindings();
     }
 
@@ -60,7 +62,7 @@ public class RobotContainer {
             // Drivetrain will execute this command periodically
             drivetrain.applyRequest(() ->
                 drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                    .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
                     .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
             )
         );
@@ -77,22 +79,31 @@ public class RobotContainer {
         joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
+        joystick.povRight().onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef1));
+        joystick.povDown().onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef2));
+        joystick.povRight().onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef3));
+
         // reset the field-centric heading on left bumper press
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
-        new JoystickButton(launchpad, 0).onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef1));
-        new JoystickButton(launchpad, 1).onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef2));
-        new JoystickButton(launchpad, 2).onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef3));
-        new JoystickButton(launchpad, 3).onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef4));
-        new JoystickButton(launchpad, 4).onTrue(new ElevatorCommand(elevator, ElevatorConstants.kAlgae1));
-        new JoystickButton(launchpad, 5).onTrue(new ElevatorCommand(elevator, ElevatorConstants.kAlgae2));
-        new JoystickButton(launchpad, 6).onTrue(new ElevatorCommand(elevator, ElevatorConstants.kProcessor));
-        new JoystickButton(launchpad, 7).onTrue(new ElevatorCommand(elevator, ElevatorConstants.kCoralStation));
-        
-        new JoystickButton(launchpad, 8).whileTrue(new IntakeCommand(intake, true)).onFalse(new IntakeCommand(intake, true));
-
         drivetrain.registerTelemetry(logger::telemeterize);
     }
+
+    /*private void loadMusic(){
+        List<TalonFX> m = List.of(
+        new TalonFX(2),
+        new TalonFX(40),
+        new TalonFX(41),
+        new TalonFX(43),
+        new TalonFX(45),
+        new TalonFX(46),
+        new TalonFX(47),
+        new TalonFX(49));
+
+        music = new OrchestraPlayer(m, "output.chrp");
+
+        music.playSong();
+    }*/
 
     public Command getAutonomousCommand() {
         return Commands.print("No autonomous command configured");
