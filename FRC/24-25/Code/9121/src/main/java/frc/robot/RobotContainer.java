@@ -6,32 +6,29 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
-import com.ctre.phoenix6.Orchestra;
-import com.ctre.phoenix6.hardware.ParentDevice;
-import com.ctre.phoenix6.hardware.TalonFX;
+import com.pathplanner.lib.auto.AutoBuilder;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.motorcontrol.Talon;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Commands.ElevatorCommand;
+import frc.robot.Commands.IntakeCommand;
 import frc.robot.Constants.ElevatorConstants;
+import frc.robot.Utils.ControllerUtils;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.CANdleSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
-import frc.robot.subsystems.OrchestraPlayer;
+import frc.robot.subsystems.IntakeSubsystem;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
+
 
     //public OrchestraPlayer music;
 
@@ -39,19 +36,26 @@ public class RobotContainer {
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
-    private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
-    private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
     private final ElevatorSubsystem elevator = new ElevatorSubsystem();
 
+    private final IntakeSubsystem intake = new IntakeSubsystem();
+
     private final CommandXboxController joystick = new CommandXboxController(0);
 
-    public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain(); 
+    
+    private final SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
         //loadMusic();
+        drivetrain.runOnce(() -> drivetrain.seedFieldCentric());
+
+        autoChooser = AutoBuilder.buildAutoChooser();
+
+        configureAutoChooser();
         configureBindings();
     }
 
@@ -61,27 +65,21 @@ public class RobotContainer {
         drivetrain.setDefaultCommand(
             // Drivetrain will execute this command periodically
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+                drive.withVelocityX(joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
+                    .withVelocityY(joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                    .withRotationalRate(joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
             )
         );
 
-        joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        joystick.b().whileTrue(drivetrain.applyRequest(() ->
-            point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
-        ));
+        joystick.povUp().onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef1));
+        joystick.povRight().onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef2));
+        joystick.povDown().onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef3));
 
-        // Run SysId routines when holding back/start and X/Y.
-        // Note that each routine should be run exactly once in a single log.
-        joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-        joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-        joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-        joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+        joystick.leftTrigger().onTrue(new IntakeCommand(intake, true, ControllerUtils.squareInput(joystick.getLeftTriggerAxis(), 0.05)))
+            .onFalse(new IntakeCommand(intake, false, 0.0));
 
-        joystick.povRight().onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef1));
-        joystick.povDown().onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef2));
-        joystick.povRight().onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef3));
+        joystick.rightTrigger().onTrue(new IntakeCommand(intake, true, ControllerUtils.squareInput(-joystick.getRightTriggerAxis(), 0.05)))
+            .onFalse(new IntakeCommand(intake, false, 0.0));
 
         // reset the field-centric heading on left bumper press
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
@@ -89,7 +87,37 @@ public class RobotContainer {
         drivetrain.registerTelemetry(logger::telemeterize);
     }
 
-    /*private void loadMusic(){
+    public Command getAutonomousCommand() {
+        //return this.mobilityAuton();
+        return autoChooser.getSelected();
+      }
+
+
+    private Command blueMobilityAuton(){
+        return drivetrain.applyRequest(()-> drive.withVelocityX(0.6 * MaxSpeed)).withTimeout(3.5)
+        .andThen(drivetrain.applyRequest(()-> drive.withVelocityX(0)));
+    }
+
+    private Command redMobilityAuton(){
+        return drivetrain.applyRequest(()-> drive.withVelocityX(-0.6 * MaxSpeed)).withTimeout(3.5)
+        .andThen(drivetrain.applyRequest(()-> drive.withVelocityX(0)));
+    }
+
+
+    private void configureAutoChooser() {
+        autoChooser.setDefaultOption("Do Nothing", new InstantCommand());
+
+        autoChooser.addOption("Blue Mobility", blueMobilityAuton());
+        autoChooser.addOption("Red Mobility", redMobilityAuton());
+
+        SmartDashboard.putData("Auto Mode", autoChooser);
+    }
+
+    
+
+
+    
+       /*private void loadMusic(){
         List<TalonFX> m = List.of(
         new TalonFX(2),
         new TalonFX(40),
@@ -104,8 +132,4 @@ public class RobotContainer {
 
         music.playSong();
     }*/
-
-    public Command getAutonomousCommand() {
-        return Commands.print("No autonomous command configured");
-    }
 }

@@ -6,17 +6,19 @@ import frc.robot.subsystems.IntakeSubsystem;
 public class IntakeCommand extends Command {
     private final IntakeSubsystem intake;
     private final boolean isIntaking;
+    private final double intakePower;
 
-    public IntakeCommand(IntakeSubsystem intake, boolean isIntaking) {
+    public IntakeCommand(IntakeSubsystem intake, boolean isIntaking, double intakePower) {
         this.intake = intake;
         this.isIntaking = isIntaking;
+        this.intakePower = intakePower;
         addRequirements(intake);
     }
 
     @Override
     public void initialize() {
         if (isIntaking) {
-            intake.intake();  // Start intake
+            intake.intake(intakePower);  // Start intake
         } else {
             intake.outtake(); // Start outtake
         }

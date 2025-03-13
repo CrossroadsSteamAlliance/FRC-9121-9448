@@ -1,29 +1,45 @@
 package frc.robot.subsystems;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.opencv.features2d.Feature2D;
+
+import com.pathplanner.lib.auto.NamedCommands;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants.IntakeConstants;
 
 public class IntakeSubsystem extends SubsystemBase {
     private final SparkMax intakeMotor1;
     private final SparkMax intakeMotor2;
+    private final SimpleMotorFeedforward feedforward;
 
     // Intake speed constants
-    private static final double INTAKE_SPEED = 0.7;  // Full power for intake
-    private static final double HOLD_SPEED = 0;    // Reduced power to hold game piece
-    private static final double OUTTAKE_SPEED = -1.0; // Full power for outtaking
+    private final double HOLD_SPEED = 0;    // Reduced power to hold game piece
+    private final double OUTTAKE_SPEED = 1.0; // Full power for outtaking
 
-    public IntakeSubsystem(int motor1ID, int motor2ID) {
-        intakeMotor1 = new SparkMax(motor1ID, MotorType.kBrushless);
-        intakeMotor2 = new SparkMax(motor2ID, MotorType.kBrushless);
+    private final double motorKV = 0.15;
+    private final double motorKS = 0.04;
+
+    public IntakeSubsystem() {
+        intakeMotor1 = new SparkMax(IntakeConstants.kCANIntakeTop, MotorType.kBrushless);
+        intakeMotor2 = new SparkMax(IntakeConstants.kCANIntakeBottom, MotorType.kBrushless);
+
+        feedforward = new SimpleMotorFeedforward(motorKS, motorKV);
 
         intakeMotor2.isFollower();
         intakeMotor2.setInverted(true);
     }
 
     // Run intake at full speed
-    public void intake() {
-        intakeMotor1.set(INTAKE_SPEED);
+    public void intake(double INTAKE_SPEED) {
+        intakeMotor1.set(feedforward.calculate(INTAKE_SPEED));
     }
 
     // Hold game piece with reduced power
@@ -39,5 +55,19 @@ public class IntakeSubsystem extends SubsystemBase {
     // Stop intake motors
     public void stop() {
         intakeMotor1.set(0);
+    }
+
+    @Override
+    public void periodic(){
+        SetMotorDashboard();
+    }
+
+    private void SetMotorDashboard(){
+        SmartDashboard.putBoolean("Intake Running", (intakeMotor1.get()>0.1 || intakeMotor1.get()<0.1) ? true : false);
+        SmartDashboard.putNumber("Intake Power", intakeMotor1.get());
+    }
+
+    private void SetNamedCommands(){
+        
     }
 }
