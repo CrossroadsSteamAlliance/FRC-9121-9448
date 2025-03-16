@@ -16,32 +16,16 @@
     },
     {
       "anchor": {
-        "x": 3.861,
-        "y": 5.53625
+        "x": 3.8698535394629783,
+        "y": 5.403010577705452
       },
       "prevControl": {
-        "x": 4.185589834314039,
-        "y": 6.112135189912005
-      },
-      "nextControl": {
-        "x": 3.55875,
-        "y": 4.999999999999999
-      },
-      "isLocked": false,
-      "linkedName": null
-    },
-    {
-      "anchor": {
-        "x": 1.5210000000000001,
-        "y": 7.456999999999999
-      },
-      "prevControl": {
-        "x": 1.371545480153124,
-        "y": 7.657407950184965
+        "x": 3.7203982794927475,
+        "y": 5.603417975940224
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "Reef"
     }
   ],
   "rotationTargets": [],
@@ -49,8 +33,8 @@
   "pointTowardsZones": [],
   "eventMarkers": [
     {
-      "name": "Score",
-      "waypointRelativePos": 1.0872651356993708,
+      "name": "",
+      "waypointRelativePos": 0.55,
       "endWaypointRelativePos": 0.9336116910229669,
       "command": null
     }
@@ -65,10 +49,10 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 35.70669140060305
+    "rotation": 27.5528115767177
   },
   "reversed": false,
-  "folder": null,
+  "folder": "Blue Left",
   "idealStartingState": {
     "velocity": 0,
     "rotation": 0.0

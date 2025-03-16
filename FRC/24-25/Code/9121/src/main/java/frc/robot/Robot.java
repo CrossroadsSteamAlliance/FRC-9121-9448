@@ -28,7 +28,9 @@ public class Robot extends TimedRobot {
   public void disabledInit() {}
 
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+    SmartDashboard.updateValues();
+  }
 
   @Override
   public void disabledExit() {}
@@ -56,7 +58,9 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+    SmartDashboard.updateValues();
+  }
 
   @Override
   public void teleopExit() {}

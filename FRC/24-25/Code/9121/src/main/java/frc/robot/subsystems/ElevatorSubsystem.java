@@ -1,95 +1,83 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
-import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.Radians;
-import static edu.wpi.first.units.Units.Rotation;
-
-import com.ctre.phoenix.led.Animation;
-import com.ctre.phoenix.led.CANdle;
-import com.ctre.phoenix6.configs.MotionMagicConfigs;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
-
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-import frc.robot.Constants.ElevatorConstants;
-import frc.robot.Constants.LEDConstants;
 
 public class ElevatorSubsystem extends SubsystemBase {
     private final TalonFX elevatorMotor;
     private final MotionMagicVoltage motionMagic;
+    
+    // Elevator limits (inches)
+    public final double MAX_HEIGHT = Constants.ElevatorConstants.kMaxElevatorExtension;
+    public final double MIN_HEIGHT = 0.0;
 
-    private static final double STAGE_MULTIPLIER = 2.0;
-    private static final double GEAR_RATIO = 27.0;
-    private static final double MAX_HEIGHT = Constants.ElevatorConstants.kMaxElevatorExtension;
-    private static final double MIN_HEIGHT = 0.0;
-    private static final double TICKS_PER_INCH = (2048 * GEAR_RATIO) / STAGE_MULTIPLIER;
+    public final double gearRatio = 75;
 
+    private double zero = 0.0;
+    
     public ElevatorSubsystem() {
         elevatorMotor = new TalonFX(Constants.ElevatorConstants.kCANElevator);
-        motionMagic = new MotionMagicVoltage(null); // ✅ Fix: Pass the motor reference
-
+        motionMagic = new MotionMagicVoltage(0);
+        
         TalonFXConfiguration config = new TalonFXConfiguration();
         config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-
-        // ✅ Tune Motion Magic PID
-        config.Slot0.kP = 0.2; // Increased P for better response
-        config.Slot0.kI = 0.0;
-        config.Slot0.kD = 0.01; // Small D to dampen oscillations
-        config.Slot0.kV = 0.1; 
-
-        config.MotionMagic.MotionMagicCruiseVelocity = 18000; // Reduced for stability
-        config.MotionMagic.MotionMagicAcceleration = 36000;
-
-        // ✅ Soft Limits
-        config.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = MAX_HEIGHT * TICKS_PER_INCH;
-        config.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = MIN_HEIGHT * TICKS_PER_INCH;
-
-        elevatorMotor.getConfigurator().apply(config);
-
-        // ✅ Encoder Zeroing (consider CANcoder or limit switch)
-        elevatorMotor.setPosition(0);
-    }
-
-    public void setHeight(double heightInches) {
-        double targetPos = heightInches * TICKS_PER_INCH;
-        elevatorMotor.setControl(motionMagic.withPosition(targetPos));
-    }
-
-    public double getHeight() {
-        return elevatorMotor.getPosition().getValue().magnitude() / TICKS_PER_INCH; // ✅ Fix: No radians
-    }
-
-    public void stop() {
-        elevatorMotor.setControl(new DutyCycleOut(0)); // ✅ Fix: Proper stop command
-    }
-
-    public void resetEncoder() {
-        elevatorMotor.setPosition(0);
-    }
-
-    public void setLEDstate(){
+        config.MotorOutput.Inverted = config.MotorOutput.Inverted.Clockwise_Positive;
         
+        // Motion Magic PID tuning 
+        config.Slot0.kP = 0.2;
+        config.Slot0.kI = 0.0;
+        config.Slot0.kD = 0.01;
+        config.Slot0.kV = 0.1;
+        
+        // Motion Magic constraints
+        config.MotionMagic.MotionMagicCruiseVelocity = 1000;
+        config.MotionMagic.MotionMagicAcceleration = 500;
+        
+        // Soft limits to prevent overtravel
+        config.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
+        config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = MIN_HEIGHT;
+        
+        elevatorMotor.getConfigurator().apply(config);
+        elevatorMotor.setPosition(0); // Zero encoder at startup
+        zero = elevatorMotor.getPosition().getValueAsDouble();
+    }
+    
+    // Command the elevator to a specific height (in inches) using Motion Magic.
+    public void setHeight(double set) {
+       elevatorMotor.setControl(motionMagic.withPosition());
+    }
+    
+    public double getHeight() {
+        return elevatorMotor.getPosition().getValueAsDouble();
+    }  
+    
+    public boolean isAtSetpoint() {
+       return getHeight() >  ? true : false;
+    }
+    
+    // Fully stop the motor.
+    public void stop() {
+        elevatorMotor.setControl(new DutyCycleOut(0));
     }
 
+    public void zeroElevator(){
+        elevatorMotor.setPosition(0);
+    }
+    
     @Override
-    public void periodic(){
-        SetMotorDashboard();
-    }
-
-    private void SetMotorDashboard(){
-        SmartDashboard.putBoolean("Elevator Running", elevatorMotor.isAlive());
-        SmartDashboard.putNumber("Elevator Height", getHeight());
+    public void periodic() {
+        double currentHeight = getHeight();
+        SmartDashboard.putNumber("Elevator Height (in)", currentHeight);
         SmartDashboard.putNumber("Elevator Raw Encoder", elevatorMotor.getPosition().getValueAsDouble());
         SmartDashboard.putNumber("Elevator Power", elevatorMotor.get());
+        SmartDashboard.putNumber("Elevator Setpoint", setpoint);
+        SmartDashboard.putBoolean("Elevator At Setpoint", isAtSetpoint());
     }
 }

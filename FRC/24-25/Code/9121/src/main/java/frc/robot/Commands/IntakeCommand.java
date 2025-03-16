@@ -8,17 +8,17 @@ public class IntakeCommand extends Command {
     private final boolean isIntaking;
     private final double intakePower;
 
-    public IntakeCommand(IntakeSubsystem intake, boolean isIntaking, double intakePower) {
+    public IntakeCommand(IntakeSubsystem intake, boolean isIntaking, double dec) {
         this.intake = intake;
         this.isIntaking = isIntaking;
-        this.intakePower = intakePower;
+        this.intakePower = dec;
         addRequirements(intake);
     }
 
     @Override
     public void initialize() {
-        if (isIntaking) {
-            intake.intake(intakePower);  // Start intake
+        if (isIntaking && intakePower > 0) {
+            intake.intake();  // Start intake
         } else {
             intake.outtake(); // Start outtake
         }

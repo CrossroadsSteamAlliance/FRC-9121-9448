@@ -8,19 +8,23 @@ import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.config.RobotConfig;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Commands.ElevatorCommand;
 import frc.robot.Commands.IntakeCommand;
 import frc.robot.Constants.ElevatorConstants;
 import frc.robot.Utils.ControllerUtils;
 import frc.robot.generated.TunerConstants;
-import frc.robot.subsystems.CANdleSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
@@ -51,12 +55,17 @@ public class RobotContainer {
 
     public RobotContainer() {
         //loadMusic();
-        drivetrain.runOnce(() -> drivetrain.seedFieldCentric());
+        elevator.runOnce(() -> elevator.zeroElevator());
+        
+        configureBindings();
+
+        getNamedCommands();
 
         autoChooser = AutoBuilder.buildAutoChooser();
 
         configureAutoChooser();
-        configureBindings();
+
+        SmartDashboard.putData(autoChooser);
     }
 
     private void configureBindings() {
@@ -71,28 +80,20 @@ public class RobotContainer {
             )
         );
 
-        joystick.povUp().onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef1));
         joystick.povRight().onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef2));
-        joystick.povDown().onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef3));
+        joystick.povUp().onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef1));
+        joystick.povDown().onTrue(new ElevatorCommand(elevator, 0));
 
-        joystick.leftTrigger().onTrue(new IntakeCommand(intake, true, ControllerUtils.squareInput(joystick.getLeftTriggerAxis(), 0.05)))
-            .onFalse(new IntakeCommand(intake, false, 0.0));
 
-        joystick.rightTrigger().onTrue(new IntakeCommand(intake, true, ControllerUtils.squareInput(-joystick.getRightTriggerAxis(), 0.05)))
-            .onFalse(new IntakeCommand(intake, false, 0.0));
+        joystick.x().onTrue(new IntakeCommand(intake, true, -1)).onFalse(new RunCommand(() -> intake.stop(), intake));
+        joystick.b().onTrue(new IntakeCommand(intake, true, 1)).onFalse(new RunCommand(() -> intake.stop(), intake));;
 
         // reset the field-centric heading on left bumper press
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }
-
-    public Command getAutonomousCommand() {
-        //return this.mobilityAuton();
-        return autoChooser.getSelected();
-      }
-
-
+      
     private Command blueMobilityAuton(){
         return drivetrain.applyRequest(()-> drive.withVelocityX(0.6 * MaxSpeed)).withTimeout(3.5)
         .andThen(drivetrain.applyRequest(()-> drive.withVelocityX(0)));
@@ -105,18 +106,26 @@ public class RobotContainer {
 
 
     private void configureAutoChooser() {
-        autoChooser.setDefaultOption("Do Nothing", new InstantCommand());
-
         autoChooser.addOption("Blue Mobility", blueMobilityAuton());
         autoChooser.addOption("Red Mobility", redMobilityAuton());
-
-        SmartDashboard.putData("Auto Mode", autoChooser);
     }
 
-    
+    private void getNamedCommands(){
+        NamedCommands.registerCommand("CoralL2", new ElevatorCommand(elevator, ElevatorConstants.kReef3));
+        NamedCommands.registerCommand("Outtake", new IntakeCommand(intake, true, -1));
+        NamedCommands.registerCommand("CoralL0", new ElevatorCommand(elevator, ElevatorConstants.kReef3));
+        NamedCommands.registerCommand("StopIntake", new IntakeCommand(intake, false, 0));
+    }
+
+    public Command getAutonomousCommand() {
+        return autoChooser.getSelected();
+      }
 
 
-    
+
+   
+
+
        /*private void loadMusic(){
         List<TalonFX> m = List.of(
         new TalonFX(2),
