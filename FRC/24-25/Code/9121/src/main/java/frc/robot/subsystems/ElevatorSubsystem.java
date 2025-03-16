@@ -3,9 +3,15 @@ package frc.robot.subsystems;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.DutyCycleOut;
+
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -13,21 +19,23 @@ import frc.robot.Constants;
 public class ElevatorSubsystem extends SubsystemBase {
     private final TalonFX elevatorMotor;
     private final MotionMagicVoltage motionMagic;
+
+    public static final double rotationsPerInch = 20;
     
-    // Elevator limits (inches)
-    public final double MAX_HEIGHT = Constants.ElevatorConstants.kMaxElevatorExtension;
-    public final double MIN_HEIGHT = 0.0;
+    // Elevator limits (Rotations)
+    public final double MAX_HEIGHT = Constants.ElevatorConstants.kMaxElevatorExtension * rotationsPerInch;
 
-    public final double gearRatio = 75;
-
-    private double zero = 0.0;
+    private double zero;
+    private double setpoint;
     
     public ElevatorSubsystem() {
         elevatorMotor = new TalonFX(Constants.ElevatorConstants.kCANElevator);
         motionMagic = new MotionMagicVoltage(0);
         
         TalonFXConfiguration config = new TalonFXConfiguration();
-        config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+        config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+        
+        //DONT CHANGE
         config.MotorOutput.Inverted = config.MotorOutput.Inverted.Clockwise_Positive;
         
         // Motion Magic PID tuning 
@@ -37,29 +45,27 @@ public class ElevatorSubsystem extends SubsystemBase {
         config.Slot0.kV = 0.1;
         
         // Motion Magic constraints
-        config.MotionMagic.MotionMagicCruiseVelocity = 1000;
+        config.MotionMagic.MotionMagicCruiseVelocity = 3000;
         config.MotionMagic.MotionMagicAcceleration = 500;
-        
-        // Soft limits to prevent overtravel
-        config.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = MIN_HEIGHT;
+
         
         elevatorMotor.getConfigurator().apply(config);
-        elevatorMotor.setPosition(0); // Zero encoder at startup
-        zero = elevatorMotor.getPosition().getValueAsDouble();
+        zeroElevator();
     }
     
     // Command the elevator to a specific height (in inches) using Motion Magic.
     public void setHeight(double set) {
-       elevatorMotor.setControl(motionMagic.withPosition());
+       setpoint = set * rotationsPerInch;
+        
+        elevatorMotor.setControl(motionMagic.withPosition(set * rotationsPerInch));
     }
     
     public double getHeight() {
-        return elevatorMotor.getPosition().getValueAsDouble();
+        return elevatorMotor.getPosition().getValueAsDouble() / rotationsPerInch;
     }  
     
     public boolean isAtSetpoint() {
-       return getHeight() >  ? true : false;
+       return getHeight() == setpoint / rotationsPerInch ? true : false;
     }
     
     // Fully stop the motor.
@@ -69,6 +75,10 @@ public class ElevatorSubsystem extends SubsystemBase {
 
     public void zeroElevator(){
         elevatorMotor.setPosition(0);
+    }
+
+    public double getElevatorZero(){
+        return zero;
     }
     
     @Override

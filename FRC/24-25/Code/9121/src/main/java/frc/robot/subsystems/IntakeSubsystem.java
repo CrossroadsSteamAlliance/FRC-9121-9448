@@ -25,7 +25,7 @@ public class IntakeSubsystem extends SubsystemBase {
     // Intake speed constants
     private final double INTAKE_SPEED = 0.8;
     private final double HOLD_SPEED = 0;    // Reduced power to hold game piece
-    private final double OUTTAKE_SPEED = 0.8; // Full power for outtaking
+    private final double OUTTAKE_SPEED = 0.5; // Full power for outtaking
 
     private final double motorKV = 0.15;
     private final double motorKS = 0.04;

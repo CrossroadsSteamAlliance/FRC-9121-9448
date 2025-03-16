@@ -11,17 +11,16 @@ public class Constants {
         public static final int kMaxElevatorExtension = 32;
         public static final int kMinElevatorExtension = 0;
 
-        public static final int kReef1 = 10;
-        public static final int kReef2 = 25;
-        public static final int kReef3 = 32;
+        public static final double kReef1 = 5;
+        public static final double kReef2 =8;
+        public static final double kReef3 = 16;  
+        public static final double kStation= 3.85;
     }
 
     public static class IntakeConstants{
 
         public static final int kCANIntakeTop = 30;
         public static final int kCANIntakeBottom = 31;
-
-        public static final double kMaxSpeed = 0.8;
     }
 
     public static class LEDConstants{

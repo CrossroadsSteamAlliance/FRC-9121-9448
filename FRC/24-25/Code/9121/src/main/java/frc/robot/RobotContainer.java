@@ -80,13 +80,15 @@ public class RobotContainer {
             )
         );
 
-        joystick.povRight().onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef2));
-        joystick.povUp().onTrue(new ElevatorCommand(elevator, ElevatorConstants.kReef1));
-        joystick.povDown().onTrue(new ElevatorCommand(elevator, 0));
+        joystick.povLeft().onChange(new ElevatorCommand(elevator, ElevatorConstants.kReef3));
+        joystick.povRight().onChange(new ElevatorCommand(elevator, ElevatorConstants.kReef2));
+        joystick.povUp().onChange(new ElevatorCommand(elevator, ElevatorConstants.kReef1));
+        joystick.povDown().onChange(new ElevatorCommand(elevator, 0));
+        joystick.rightBumper().onChange(new ElevatorCommand(elevator,ElevatorConstants.kStation));
 
 
-        joystick.x().onTrue(new IntakeCommand(intake, true, -1)).onFalse(new RunCommand(() -> intake.stop(), intake));
-        joystick.b().onTrue(new IntakeCommand(intake, true, 1)).onFalse(new RunCommand(() -> intake.stop(), intake));;
+        joystick.x().onTrue(new IntakeCommand(intake, true, 1)).onFalse(new RunCommand(() -> intake.stop(), intake));
+        joystick.b().onTrue(new IntakeCommand(intake, true, -1)).onFalse(new RunCommand(() -> intake.stop(), intake));;
 
         // reset the field-centric heading on left bumper press
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
@@ -95,12 +97,12 @@ public class RobotContainer {
     }
       
     private Command blueMobilityAuton(){
-        return drivetrain.applyRequest(()-> drive.withVelocityX(0.6 * MaxSpeed)).withTimeout(3.5)
+        return drivetrain.applyRequest(()-> drive.withVelocityX(-0.6 * MaxSpeed)).withTimeout(3.5)
         .andThen(drivetrain.applyRequest(()-> drive.withVelocityX(0)));
     }
 
     private Command redMobilityAuton(){
-        return drivetrain.applyRequest(()-> drive.withVelocityX(-0.6 * MaxSpeed)).withTimeout(3.5)
+        return drivetrain.applyRequest(()-> drive.withVelocityX(0.6 * MaxSpeed)).withTimeout(3.5)
         .andThen(drivetrain.applyRequest(()-> drive.withVelocityX(0)));
     }
 
