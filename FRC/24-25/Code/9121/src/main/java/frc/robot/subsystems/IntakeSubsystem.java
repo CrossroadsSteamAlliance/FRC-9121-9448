@@ -23,9 +23,9 @@ public class IntakeSubsystem extends SubsystemBase {
     private final SimpleMotorFeedforward feedforward;
 
     // Intake speed constants
-    private final double INTAKE_SPEED = 0.8;
+    private final double INTAKE_SPEED = 0.7;
     private final double HOLD_SPEED = 0;    // Reduced power to hold game piece
-    private final double OUTTAKE_SPEED = 0.5; // Full power for outtaking
+    private final double OUTTAKE_SPEED = 0.7; // Full power for outtaking
 
     private final double motorKV = 0.15;
     private final double motorKS = 0.04;
@@ -38,10 +38,15 @@ public class IntakeSubsystem extends SubsystemBase {
 
     }
 
-    // Run intake at full speed
+    // Run intake
     public void intake() {
         intakeMotor1.set(-INTAKE_SPEED);
         intakeMotor2.set(INTAKE_SPEED);
+    }
+
+    public void intakeFull(){
+        intakeMotor1.set(-1);
+        intakeMotor2.set(1);
     }
 
     // Hold game piece with reduced power

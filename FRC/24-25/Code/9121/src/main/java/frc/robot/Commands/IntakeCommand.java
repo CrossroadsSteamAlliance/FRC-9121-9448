@@ -17,8 +17,10 @@ public class IntakeCommand extends Command {
 
     @Override
     public void initialize() {
-        if (isIntaking && intakePower > 0) {
-            intake.intake();  // Start intake
+        if(isIntaking && intakePower == 0.5){
+            intake.intake();
+        }else if(isIntaking && intakePower == 1){
+            intake.intakeFull();
         } else {
             intake.outtake(); // Start outtake
         }

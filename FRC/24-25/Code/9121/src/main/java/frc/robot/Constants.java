@@ -11,10 +11,10 @@ public class Constants {
         public static final int kMaxElevatorExtension = 32;
         public static final int kMinElevatorExtension = 0;
 
-        public static final double kReef1 = 5;
-        public static final double kReef2 =8;
-        public static final double kReef3 = 16;  
-        public static final double kStation= 3.85;
+        public static final double kReef1 = 8;
+        public static final double kReef2 = 9;
+        public static final double kReef3 = 13;  
+        public static final double kStation= 4.45;
     }
 
     public static class IntakeConstants{

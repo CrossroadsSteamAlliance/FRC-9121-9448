@@ -45,7 +45,7 @@ public class ElevatorSubsystem extends SubsystemBase {
         config.Slot0.kV = 0.1;
         
         // Motion Magic constraints
-        config.MotionMagic.MotionMagicCruiseVelocity = 3000;
+        config.MotionMagic.MotionMagicCruiseVelocity = 2000;
         config.MotionMagic.MotionMagicAcceleration = 500;
 
         
@@ -65,7 +65,7 @@ public class ElevatorSubsystem extends SubsystemBase {
     }  
     
     public boolean isAtSetpoint() {
-       return getHeight() == setpoint / rotationsPerInch ? true : false;
+       return getHeight() == (setpoint / rotationsPerInch) ? true : false;
     }
     
     // Fully stop the motor.
